@@ -1,0 +1,16 @@
+---
+name: 'Setup MQ Client'
+description: 'Setup a specific version of MQ Client'
+author: 'SeyfSV'
+inputs:
+  mq-client-version:
+    description: 'MQ Client version'
+    required: false
+  mq-file-path:
+    description: 'Path to MQ Client location'
+    required: false
+    default: ''
+
+runs:
+  using: 'node12'
+  main: 'dist/index.js'
