@@ -9,7 +9,15 @@ inputs:
   mq-file-path:
     description: 'Path to MQ Client location'
     required: false
-    default: ''
+    default: 
+  download-path:
+    description: 'Path to redistributable archive location'
+    require: false
+    default: setup-mqclient
+  force-download:
+    description: 'Force archive redownload even archive already exists in download-path'
+    require: false
+    default: false
 
 runs:
   using: 'node12'
