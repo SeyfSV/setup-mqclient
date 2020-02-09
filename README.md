@@ -21,6 +21,7 @@ Caching directory can be changed by using `download-path` option.
 See [action.yml](action.yml)
 
 Basic:
+
 ```yaml
 steps:
   - name: Install MQ Client
@@ -28,10 +29,11 @@ steps:
     with:
       mq-client-version: 9.1.4.0 # Exact version of a client or toolkit
     
-    - run: `your_mq_client_application`
+    - run: dspmqver
 ```
 
 <a name="caching">Caching</a> and matrix:
+
 ```yaml
 strategy:
   matrix:
@@ -50,5 +52,5 @@ steps:
     with:
       mq-client-version: ${{ matrix.mq-client-version }}
     
-    - run: `your_mq_client_application`
+    - run: dspmqver
 ```

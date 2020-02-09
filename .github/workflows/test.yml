@@ -41,7 +41,7 @@ jobs:
         with:
           mq-client-version: ${{ matrix.mq-client-version }}
           mq-file-path: mq-file-path/data
-          download-path: download-path/data
+          download-path: ${{ github.workspace }}/setup-mqclient/test-path
 
       - name: Run dspmqver
         run: dspmqver
