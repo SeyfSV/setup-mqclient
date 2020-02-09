@@ -25,7 +25,7 @@ Basic:
 ```yaml
 steps:
   - name: Install MQ Client
-    uses: SeyfSV/setup-mqclient@v0.1.1
+    uses: SeyfSV/setup-mqclient@v0.1.2
     with:
       mq-client-version: 9.1.4.0 # Exact version of a client or toolkit
     
@@ -48,9 +48,13 @@ steps:
       key: mqclient-${{ runner.os }}-${{ matrix.mq-client-version }}
 
   - name: Install MQ Client
-    uses: SeyfSV/setup-mqclient@v0.1.1
+    uses: SeyfSV/setup-mqclient@v0.1.2
     with:
       mq-client-version: ${{ matrix.mq-client-version }}
     
     - run: dspmqver
 ```
+
+# License
+
+The scripts and documentation in this project are released under the [MIT License](LICENSE)
