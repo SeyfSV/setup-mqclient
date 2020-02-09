@@ -13,7 +13,7 @@ const ARCHIVE_WIN = 'IBM-MQC-Redist-Win64.zip'
 const ARCHIVE_MAC = 'IBM-MQ-Toolkit-MacX64.tar.gz'
 
 const PATH_LINUX = expandHomeDir('~/IBM/MQ')
-const PATH_WIN = path.normalize('c:/Program Files (x86)/IBM/WebSphere MQ')
+const PATH_WIN = path.normalize('%HOMEDRIVE%%HOMEPATH%\IBM\MQ\data')
 const PATH_MAC = expandHomeDir('~/IBM/MQ')
 const PATH_DATA_MAC = expandHomeDir('~/IBM/MQ/data')
 
@@ -119,9 +119,13 @@ function setup_variables(){
                 lib_path = `${mq_file_path}/lib64:${process.env['LD_LIBRARY_PATH']}`
             else
                 lib_path = `${mq_file_path}/lib64`
+            core.exportVariable('MQ_OVERRIDE_DATA_PATH',mq_file_path)
             core.exportVariable('LD_LIBRARY_PATH', lib_path)
             core.exportVariable('mq-lib-var', `LD_LIBRARY_PATH`)
             core.exportVariable('mq-lib-path', `${mq_file_path}/lib64`)
+            break
+        case "win32":
+            core.exportVariable('MQ_OVERRIDE_DATA_PATH',mq_file_path)
             break
         case "darwin":
             if (process.env.DYLD_LIBRARY_PATH){
