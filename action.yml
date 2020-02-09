@@ -2,6 +2,9 @@
 name: 'Setup MQ Client'
 description: 'Setup a specific version of MQ Client'
 author: 'SeyfSV'
+branding:
+  icon: 'download'  
+  color: 'blue'
 inputs:
   mq-client-version:
     description: 'MQ Client version'
