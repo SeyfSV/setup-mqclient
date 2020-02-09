@@ -5,7 +5,7 @@ author: 'SeyfSV'
 inputs:
   mq-client-version:
     description: 'MQ Client version'
-    required: false
+    required: true
   mq-file-path:
     description: 'Path to MQ Client location'
     required: false
