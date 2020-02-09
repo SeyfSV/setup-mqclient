@@ -1,0 +1,47 @@
+name: tests
+on: [push]
+
+jobs:
+  test_default_job:
+    strategy:
+      matrix:
+        environment: ['macos-latest', 'windows-latest', 'ubuntu-latest']
+        mq-client-version: [9.1.4.0]
+    runs-on: ${{ matrix.environment}}
+    steps:
+      - name: Cache MQ Client
+        uses: actions/cache@v1
+        with:
+          path: ${{ github.workspace }}/setup-mqclient
+          key: mqclient-${{ runner.os }}-${{ matrix.mq-client-version }}
+
+      - name: Install MQ Client
+        uses: SeyfSV/setup-mqclient@master
+        with:
+          mq-client-version: ${{ matrix.mq-client-version }}
+
+      - name: Run dspmqver
+        run: dspmqver
+
+  test_custom_job:
+    strategy:
+      matrix:
+        environment: ['macos-latest', 'windows-latest', 'ubuntu-latest']
+        mq-client-version: [9.1.4.0]
+    runs-on: ${{ matrix.environment}}
+    steps:
+      - name: Cache MQ Client
+        uses: actions/cache@v1
+        with:
+          path: ${{ github.workspace }}/setup-mqclient
+          key: mqclient-${{ runner.os }}-${{ matrix.mq-client-version }}
+
+      - name: Install MQ Client
+        uses: SeyfSV/setup-mqclient@master
+        with:
+          mq-client-version: ${{ matrix.mq-client-version }}
+          mq-file-path: mq-file-path/data
+          download-path: download-path/data
+
+      - name: Run dspmqver
+        run: dspmqver
