@@ -1,7 +1,7 @@
 ![tests](https://github.com/SeyfSV/setup-mqclient/workflows/tests/badge.svg?branch=master&event=push)
 # setup-mqclient
 
-This action sets up [IBM MQ IBM MQ redistributable client (Client)](https://www.ibm.com/support/knowledgecenter/SSFKSJ_9.1.0/com.ibm.mq.ins.doc/q122882_.htm) and [IBM MQ MacOS Toolkit (Toolkit)](https://developer.ibm.com/messaging/learn-mq/mq-tutorials/develop-mq-macos/) to Linux, Windows and MacOS [GitHub-hosted runners](https://help.github.com/en/actions/automating-your-workflow-with-github-actions/virtual-environments-for-github-hosted-runners).
+This action sets up [IBM MQ redistributable client (Client)](https://www.ibm.com/support/knowledgecenter/SSFKSJ_9.1.0/com.ibm.mq.ins.doc/q122882_.htm) and [IBM MQ MacOS Toolkit (Toolkit)](https://developer.ibm.com/messaging/learn-mq/mq-tutorials/develop-mq-macos/) to Linux, Windows and MacOS [GitHub-hosted runners](https://help.github.com/en/actions/automating-your-workflow-with-github-actions/virtual-environments-for-github-hosted-runners).
 
 Clients downloaded from https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqdev/redist
 
