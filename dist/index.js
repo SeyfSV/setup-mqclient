@@ -3878,9 +3878,11 @@ const MQ_CLIENT_VERSION = core.getInput('mq-client-version')
 const FORCE_DWNLD = (core.getInput('force-download') === 'true')
 const PATH_INST = core.getInput('mq-file-path')
 
-var mq_file_path = path.resolve(PATH_INST);
-if (mq_file_path != '')
-    core.exportVariable('MQ_OVERRIDE_DATA_PATH',mq_file_path)
+var mq_file_path = ''
+if (PATH_INST != ''){
+    mq_file_path = path.resolve(PATH_INST);
+    core.exportVariable('MQ_OVERRIDE_DATA_PATH',mq_file_path);
+}
 
 
 const DWNLD_PATH = core.getInput('download-path')
