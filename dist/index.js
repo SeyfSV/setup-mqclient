@@ -3995,6 +3995,7 @@ function setup_variables(){
             core.exportVariable('mq-lib-path', `${mq_file_path}/lib64`)
             break
     }
+    core.setOutput('mq-file-path', `${mq_file_path}`)
     core.addPath(path.join(mq_file_path, '/bin'));
     core.addPath(path.join(mq_file_path, '/bin64'));
 

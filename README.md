@@ -7,14 +7,18 @@ Clients downloaded from https://public.dhe.ibm.com/ibmdl/export/pub/software/web
 
 Toolkit downloaded from https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqdev/mactoolkit
 
-Default paths are used for Clients and Toolkit installations:
+Default installation paths are used for Clients and Toolkit installations:
 * Windows: `%HOMEDRIVE%%HOMEPATH%\IBM\MQ\data`
 * Linux: `$HOME/IBM/MQ/data`
 * MacOs: `$HOME/IBM/MQ/data`
 
+Installation path can be changed with `mq-file-path` input parameter.
+
 By default Client and Toolkit downloaded to `setup-mqclient` direcory in the `Home` directory. You can use it for [caching](#caching).
 
 Caching directory can be changed by using `download-path` option.
+
+Action has output parameter `mq-file-path`, that contains installation path.
 
 # Usage
 
@@ -25,7 +29,7 @@ Basic:
 ```yaml
 steps:
   - name: Install MQ Client
-    uses: SeyfSV/setup-mqclient@v0.1.2
+    uses: SeyfSV/setup-mqclient@v0.1.3
     with:
       mq-client-version: 9.1.4.0 # Exact version of a client or toolkit
     
@@ -48,7 +52,7 @@ steps:
       key: mqclient-${{ runner.os }}-${{ matrix.mq-client-version }}
 
   - name: Install MQ Client
-    uses: SeyfSV/setup-mqclient@v0.1.2
+    uses: SeyfSV/setup-mqclient@v0.1.3
     with:
       mq-client-version: ${{ matrix.mq-client-version }}
     

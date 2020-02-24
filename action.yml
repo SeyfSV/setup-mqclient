@@ -21,6 +21,9 @@ inputs:
     description: 'Force archive redownload even archive already exists in download-path'
     require: false
     default: false
+outputs:
+  mq-file-path:
+    description: 'Path to MQ Client location'
 
 runs:
   using: 'node12'
