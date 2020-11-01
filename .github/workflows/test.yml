@@ -6,7 +6,7 @@ jobs:
     strategy:
       matrix:
         environment: ['macos-latest', 'windows-latest', 'ubuntu-latest']
-        mq-client-version: [9.1.4.0]
+        mq-client-version: [9.2.0.0]
     runs-on: ${{ matrix.environment}}
     steps:
       - name: Cache MQ Client
@@ -15,8 +15,11 @@ jobs:
           path: ${{ github.workspace }}/setup-mqclient
           key: mqclient-${{ runner.os }}-${{ matrix.mq-client-version }}
 
+      - name: Checkout action
+        uses: actions/checkout@v2
+
       - name: Install MQ Client
-        uses: SeyfSV/setup-mqclient@master
+        uses: ./
         with:
           mq-client-version: ${{ matrix.mq-client-version }}
 
@@ -27,7 +30,7 @@ jobs:
     strategy:
       matrix:
         environment: ['macos-latest', 'windows-latest', 'ubuntu-latest']
-        mq-client-version: [9.1.4.0]
+        mq-client-version: [9.2.0.0]
     runs-on: ${{ matrix.environment}}
     steps:
       - name: Cache MQ Client
@@ -36,8 +39,11 @@ jobs:
           path: ${{ github.workspace }}/setup-mqclient/test-path
           key: mqclient-${{ runner.os }}-${{ matrix.mq-client-version }}-test-path
 
+      - name: Checkout action
+        uses: actions/checkout@v2
+
       - name: Install MQ Client
-        uses: SeyfSV/setup-mqclient@master
+        uses: ./
         with:
           mq-client-version: ${{ matrix.mq-client-version }}
           mq-file-path: mq-file-path/data
