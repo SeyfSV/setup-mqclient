@@ -10,13 +10,15 @@ Toolkit downloaded from https://public.dhe.ibm.com/ibmdl/export/pub/software/web
 Default installation paths are used for Clients and Toolkit installations:
 * Windows: `%HOMEDRIVE%%HOMEPATH%\IBM\MQ\data`
 * Linux: `$HOME/IBM/MQ/data`
-* MacOs: `$HOME/IBM/MQ/data`
+* MacOS: `/opt/mqm`
 
-Installation path can be changed with `mq-file-path` input parameter.
+Installation path can be changed with `mq-file-path` input parameter (can't be changed for MacOS).
 
 By default Client and Toolkit downloaded to `setup-mqclient` direcory in the `Home` directory. You can use it for [caching](#caching).
 
-Caching directory can be changed by using `download-path` option.
+Caching directory can be changed by using `download-path` input parameter.
+
+Default directory of the data path can be changed with `mq-data-path` input parameter.
 
 Action has output parameter `mq-file-path`, that contains installation path.
 
@@ -29,9 +31,9 @@ Basic:
 ```yaml
 steps:
   - name: Install MQ Client
-    uses: SeyfSV/setup-mqclient@v0.1.3
+    uses: SeyfSV/setup-mqclient@v0.1.4
     with:
-      mq-client-version: 9.1.4.0 # Exact version of a client or toolkit
+      mq-client-version: 9.2.3.0 # Exact version of a client or toolkit
     
     - run: dspmqver
 ```
@@ -42,17 +44,17 @@ steps:
 strategy:
   matrix:
     environment: ['macos-latest', 'windows-latest', 'ubuntu-latest']
-    mq-client-version: [9.1.4.0]
+    mq-client-version: [9.2.2.0, 9.2.3.0]
 runs-on: ${{ matrix.environment}}
 steps:
   - name: Cache MQ Client
-    uses: actions/cache@v1
+    uses: actions/cache@v2
     with:
       path: ${{ github.workspace }}/setup-mqclient
       key: mqclient-${{ runner.os }}-${{ matrix.mq-client-version }}
 
   - name: Install MQ Client
-    uses: SeyfSV/setup-mqclient@v0.1.3
+    uses: SeyfSV/setup-mqclient@v0.1.4
     with:
       mq-client-version: ${{ matrix.mq-client-version }}
     

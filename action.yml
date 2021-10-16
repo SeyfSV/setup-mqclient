@@ -13,10 +13,14 @@ inputs:
     description: 'Path to MQ Client location'
     required: false
     default: 
+  mq-data-path:
+    description: 'Path to MQ Client `data` directory'
+    required: false
+    default:
   download-path:
     description: 'Path to redistributable archive location'
     require: false
-    default: setup-mqclient
+    default: distr
   force-download:
     description: 'Force archive redownload even archive already exists in download-path'
     require: false
