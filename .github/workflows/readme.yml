@@ -6,7 +6,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install MQ Client
-        uses: SeyfSV/setup-mqclient@v0.1.4
+        uses: SeyfSV/setup-mqclient@v0.2
         with:
           mq-client-version: 9.2.3.0 # Exact version of a client or toolkit
       - run: dspmqver
@@ -24,7 +24,7 @@ jobs:
           key: mqclient-${{ runner.os }}-${{ matrix.mq-client-version }}
 
       - name: Install MQ Client
-        uses: SeyfSV/setup-mqclient@v0.1.4
+        uses: SeyfSV/setup-mqclient@v0.2
         with:
           mq-client-version: ${{ matrix.mq-client-version }}
           download-path: ${{ github.workspace }}/distr
