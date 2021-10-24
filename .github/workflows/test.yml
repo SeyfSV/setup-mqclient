@@ -82,3 +82,34 @@ jobs:
 
       - name: Run dspmqver
         run: dspmqver
+
+  test_wrong_version_job:
+    strategy:
+      matrix:
+        environment: ["macos-latest", "windows-latest", "ubuntu-latest"]
+        mq-client-version: [0.0.0.0]
+    runs-on: ${{ matrix.environment}}
+    steps:
+      - name: Checkout action
+        uses: actions/checkout@v2
+
+      - name: Cache MQ Client
+        uses: actions/cache@v2
+        with:
+          path: distr/test-path
+          key: mqclient-${{ runner.os }}-${{ matrix.mq-client-version }}-test-path
+          restore-keys: mqclient-${{ runner.os }}-
+
+      - name: Install MQ Client
+        id: install_mq_client
+        uses: ./
+        with:
+          mq-client-version: ${{ matrix.mq-client-version }}
+          mq-file-path: mq-file-path/data
+          download-path: distr/test-path
+        continue-on-error: true
+      
+      - name: Fail if previous success
+        if: ${{ steps.install_mq_client.outcome == 0 }}
+        run: exit 1
+        

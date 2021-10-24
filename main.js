@@ -98,10 +98,17 @@ function main(mq_client_version) {
 
         let request = https.get(url + file_name,
             (res) => {
-                if (res.statusCode != 200) {
-                    core.setFailed(`Status code ${res.statusCode}!`);
-                    return;
+                switch (res.statusCode) {
+                    case 200:
+                        break;
+                    case (404) :
+                        core.setFailed(`File ${url + file_name} does not exists!`);
+                        return;
+                    default:
+                        core.setFailed(`Status code ${res.statusCode}!`);
+                        return;
                 }
+
                 res.pipe(file).on('close', () => {
                     core.info('Downloaded');
                     core.debug(`Archive size: ${fs.statSync(temporary_archive_path)['size']}`);
