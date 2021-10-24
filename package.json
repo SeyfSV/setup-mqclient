@@ -1,16 +1,16 @@
 {
   "name": "action-mqclient",
-  "version": "1.0.0",
+  "version": "0.2.0",
   "description": "github action for installing MQ Client",
   "main": "code/main.js",
   "dependencies": {
-    "@actions/core": "^1.2.6",
-    "@actions/io": "^1.0.2",
+    "@actions/core": "^1.6.0",
+    "@actions/io": "^1.1.1",
+    "cheerio": "^1.0.0-rc.10",
     "decompress": "^4.2.1",
     "decompress-targz": "^4.1.1",
     "decompress-unzip": "^4.0.1",
-    "expand-home-dir": "0.0.3",
-    "node-unzip-2": "^0.2.8",
+    "rimraf": "^3.0.2",
     "temp-dir": "^2.0.0"
   },
   "devDependencies": {

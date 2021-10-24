@@ -12,22 +12,24 @@ inputs:
   mq-file-path:
     description: 'Path to MQ Client location'
     required: false
-    default: 
+    default: ''
   mq-data-path:
     description: 'Path to MQ Client `data` directory'
     required: false
-    default:
+    default: ''
   download-path:
     description: 'Path to redistributable archive location'
-    require: false
+    required: false
     default: distr
   force-download:
     description: 'Force archive redownload even archive already exists in download-path'
-    require: false
-    default: false
+    required: false
+    default: 'false'
 outputs:
   mq-file-path:
     description: 'Path to MQ Client location'
+  mq-client-version:
+    description: 'Installed MQ Client version'
 
 runs:
   using: 'node12'

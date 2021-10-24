@@ -5,18 +5,20 @@ jobs:
   test_default_job:
     strategy:
       matrix:
-        environment: ['macos-latest', 'windows-latest', 'ubuntu-latest']
+        environment: ["macos-latest", "ubuntu-latest"]
+        # environment: ["macos-latest", "windows-latest", "ubuntu-latest"]
         mq-client-version: [9.2.2.0, 9.2.3.0]
     runs-on: ${{ matrix.environment}}
+
     steps:
+      - name: Checkout action
+        uses: actions/checkout@v2
+
       - name: Cache MQ Client
         uses: actions/cache@v2
         with:
           path: ${{ github.workspace }}/distr
           key: mqclient-${{ runner.os }}-${{ matrix.mq-client-version }}
-
-      - name: Checkout action
-        uses: actions/checkout@v2
 
       - name: Install MQ Client
         uses: ./
@@ -29,18 +31,47 @@ jobs:
   test_custom_job:
     strategy:
       matrix:
-        environment: ['macos-latest', 'windows-latest', 'ubuntu-latest']
+        environment: ["macos-latest", "windows-latest", "ubuntu-latest"]
         mq-client-version: [9.2.2.0, 9.2.3.0]
     runs-on: ${{ matrix.environment}}
     steps:
+      - name: Checkout action
+        uses: actions/checkout@v2
+
+      - name: Cache MQ Client
+        uses: actions/cache@v2
+        with:
+          path: distr/test-path
+          key: mqclient-${{ runner.os }}-${{ matrix.mq-client-version }}-test-path
+          restore-keys: mqclient-${{ runner.os }}-
+
+      - name: Install MQ Client
+        uses: ./
+        with:
+          mq-client-version: ${{ matrix.mq-client-version }}
+          mq-file-path: mq-file-path/data
+          download-path: distr/test-path
+
+      - name: Run dspmqver
+        run: dspmqver
+
+  test_latest_job:
+    needs: test_custom_job # for right testing test_custom_job should contain exact latest version
+    strategy:
+      matrix:
+        environment: ["macos-latest", "windows-latest", "ubuntu-latest"]
+        mq-client-version: [latest]
+    runs-on: ${{ matrix.environment}}
+    steps:
+      - name: Checkout action
+        uses: actions/checkout@v2
+
       - name: Cache MQ Client
         uses: actions/cache@v2
         with:
           path: ${{ github.workspace }}/distr/test-path
           key: mqclient-${{ runner.os }}-${{ matrix.mq-client-version }}-test-path
-
-      - name: Checkout action
-        uses: actions/checkout@v2
+          restore-keys: mqclient-${{ runner.os }}-
 
       - name: Install MQ Client
         uses: ./
