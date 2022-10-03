@@ -168,7 +168,9 @@ function setup_variables() {
 }
 
 function extract_package(input, output) {
-    if (!fs.existsSync(output)) {
+    if (fs.existsSync(output)) {
+        fs.rmSync(output, { recursive: true, force: true });
+    } else {
         fs.mkdirSync(output, { recursive: true });
         core.info(`Directory ${output} created`)
     }
