@@ -183,6 +183,9 @@ function extract_package(input, output) {
       cwd: output,
       file: input,
       sync: true,
+      filter: function(path, entry) {
+        return !path.includes('MANIFEST')
+      },
       onwarn: function(code, message, data) {
         core.setFailed(error.message)
       },
