@@ -13822,7 +13822,7 @@ function extract_package(input, output) {
       file: input,
       sync: true,
       onwarn: function(code, message, data) {
-        core.setFailed(error.message)
+        core.setFailed(message)
       },
     }, []) // extract all files
     core.info(`Archive extracted!`)
