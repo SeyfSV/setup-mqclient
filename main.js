@@ -1,5 +1,4 @@
 const core = require('@actions/core');
-const decompress = require('decompress');
 const { load } = require('cheerio');
 const { exec } = require('child_process');
 const fs = require('fs');
@@ -7,7 +6,8 @@ const https = require('https');
 const os = require('os');
 const path = require('path');
 const platform = os.platform();
-const rimraf = require('rimraf')
+const rimraf = require('rimraf');
+const tar = require('tar');
 const tempDirectory = require('temp-dir');
 
 
@@ -179,18 +179,15 @@ function extract_package(input, output) {
     core.debug(`Archive size: ${fs.statSync(input)['size']}`)
 
     core.info(`Extracting archive "${input}" to "${output}" ...`);
-    decompress(input, output).then(
-        files => {
-            core.info(`Archive extracted!`)
-        },
-        error => {
-            core.setFailed(error.message)
-        })
-        .catch(
-            error => {
-                throw new Error(`Error occured!: ${error}`)
-            }
-        )
+    tar.extract({
+      cwd: output,
+      file: input,
+      sync: true,
+      onwarn: function(code, message, data) {
+        core.setFailed(error.message)
+      },
+    }, []) // extract all files
+    core.info(`Archive extracted!`)
 }
 
 function install_package(dwnld_archive_path) {
@@ -235,7 +232,7 @@ function getMaxVersion(url, archive_name, callback) {
 }
 
 function compareVersions(v1, v2) {
-    // return positive: v1 > v2, zero:v1 == v2, negative: v1 < v2 
+    // return positive: v1 > v2, zero:v1 == v2, negative: v1 < v2
     v1 = v1.split('.')
     v2 = v2.split('.')
     var len = Math.max(v1.length, v2.length)
