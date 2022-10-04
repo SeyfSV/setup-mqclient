@@ -7,7 +7,7 @@ jobs:
       matrix:
         environment: ["macos-latest", "ubuntu-latest"]
         # environment: ["macos-latest", "windows-latest", "ubuntu-latest"]
-        mq-client-version: [9.2.2.0, 9.2.3.0]
+        mq-client-version: [9.2.0.0, 9.3.0.0]
     runs-on: ${{ matrix.environment}}
 
     steps:
@@ -32,7 +32,7 @@ jobs:
     strategy:
       matrix:
         environment: ["macos-latest", "windows-latest", "ubuntu-latest"]
-        mq-client-version: [9.2.2.0, 9.2.3.0]
+        mq-client-version: [9.2.0.0, 9.3.0.0]
     runs-on: ${{ matrix.environment}}
     steps:
       - name: Checkout action
@@ -108,8 +108,7 @@ jobs:
           mq-file-path: mq-file-path/data
           download-path: distr/test-path
         continue-on-error: true
-      
+
       - name: Fail if previous success
         if: ${{ steps.install_mq_client.outcome == 0 }}
         run: exit 1
-        

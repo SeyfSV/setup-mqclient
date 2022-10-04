@@ -33,8 +33,8 @@ steps:
   - name: Install MQ Client
     uses: SeyfSV/setup-mqclient@v0.1.4
     with:
-      mq-client-version: 9.2.3.0 # Exact version of a client or toolkit
-    
+      mq-client-version: 9.3.0.0 # Exact version of a client or toolkit
+
     - run: dspmqver
 ```
 
@@ -44,7 +44,7 @@ steps:
 strategy:
   matrix:
     environment: ['macos-latest', 'windows-latest', 'ubuntu-latest']
-    mq-client-version: [9.2.2.0, 9.2.3.0]
+    mq-client-version: [9.1.0.0, 9.2.0.0, latest]
 runs-on: ${{ matrix.environment}}
 steps:
   - name: Cache MQ Client
@@ -57,7 +57,7 @@ steps:
     uses: SeyfSV/setup-mqclient@v0.1.4
     with:
       mq-client-version: ${{ matrix.mq-client-version }}
-    
+
     - run: dspmqver
 ```
 
