@@ -165,14 +165,14 @@ function setup_variables() {
             break
     }
     core.setOutput('mq-file-path', `${mq_file_path}`)
+    fs.mkdirSync(path.join(mq_file_path, '/bin'), { recursive: true });
     core.addPath(path.join(mq_file_path, '/bin'));
+    fs.mkdirSync(path.join(mq_file_path, '/bin64'), { recursive: true });
     core.addPath(path.join(mq_file_path, '/bin64'));
 
 }
 
 function extract_package(input, output) {
-    fs.mkdirSync(output, { recursive: true });
-
     if (fs.existsSync(output)) {
         if (CLEAN_MQ_FILE_PATH) {
             fs.rmSync(output, { recursive: true, force: true });

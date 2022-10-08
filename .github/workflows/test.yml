@@ -16,6 +16,7 @@ jobs:
 
       - name: Cache MQ Client
         uses: actions/cache@v2
+        if: ${{ !env.ACT }}
         with:
           path: ${{ github.workspace }}/distr
           key: mqclient-${{ runner.os }}-${{ matrix.mq-client-version }}
@@ -40,6 +41,7 @@ jobs:
 
       - name: Cache MQ Client
         uses: actions/cache@v2
+        if: ${{ !env.ACT }}
         with:
           path: distr/test-path
           key: mqclient-${{ runner.os }}-${{ matrix.mq-client-version }}-test-path
@@ -68,6 +70,7 @@ jobs:
 
       - name: Cache MQ Client
         uses: actions/cache@v2
+        if: ${{ !env.ACT }}
         with:
           path: ${{ github.workspace }}/distr/test-path
           key: mqclient-${{ runner.os }}-${{ matrix.mq-client-version }}-test-path
@@ -95,6 +98,7 @@ jobs:
 
       - name: Cache MQ Client
         uses: actions/cache@v2
+        if: ${{ !env.ACT }}
         with:
           path: distr/test-path
           key: mqclient-${{ runner.os }}-${{ matrix.mq-client-version }}-test-path
@@ -126,6 +130,7 @@ jobs:
 
       - name: Cache MQ Client
         uses: actions/cache@v2
+        if: ${{ !env.ACT }}
         with:
           path: ${{ github.workspace }}/distr/test-path
           key: mqclient-${{ runner.os }}-${{ matrix.mq-client-version }}-test-path
@@ -139,6 +144,7 @@ jobs:
           download-path: ${{ github.workspace }}/distr/test-path
 
       - name: Install MQ Client (2)
+        id: install_mq_client
         uses: ./
         with:
           mq-client-version: ${{ matrix.mq-client-version }}
@@ -163,6 +169,7 @@ jobs:
 
       - name: Cache MQ Client
         uses: actions/cache@v2
+        if: ${{ !env.ACT }}
         with:
           path: ${{ github.workspace }}/distr/test-path
           key: mqclient-${{ runner.os }}-${{ matrix.mq-client-version }}-test-path
