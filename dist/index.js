@@ -13680,6 +13680,8 @@ if (MQ_DATA_PATH != '') {
     core.exportVariable('MQ_OVERRIDE_DATA_PATH', mq_data_path);
 }
 
+const CLEAN_MQ_FILE_PATH = core.getBooleanInput('clean-mq-file-path')
+
 var file_name;
 var url;
 var archive_name;
@@ -13806,12 +13808,19 @@ function setup_variables() {
 }
 
 function extract_package(input, output) {
+    fs.mkdirSync(output, { recursive: true });
+
     if (fs.existsSync(output)) {
-        fs.rmSync(output, { recursive: true, force: true });
-    } else {
-        fs.mkdirSync(output, { recursive: true });
-        core.info(`Directory ${output} created`)
+        if (CLEAN_MQ_FILE_PATH) {
+            fs.rmSync(output, { recursive: true, force: true });
+        } else {
+            core.setFailed(`Directory ${output} already exists!`)
+            process.exit(1)
+        }
     }
+
+    fs.mkdirSync(output, { recursive: true });
+    core.info(`Directory ${output} created`)
 
     core.debug(`Archive path: ${input}`)
     core.debug(`Archive size: ${fs.statSync(input)['size']}`)
