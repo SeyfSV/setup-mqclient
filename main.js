@@ -1,4 +1,5 @@
 const core = require('@actions/core');
+const decompress = require('decompress');
 const { load } = require('cheerio');
 const { exec } = require('child_process');
 const fs = require('fs');
@@ -7,7 +8,7 @@ const os = require('os');
 const path = require('path');
 const platform = os.platform();
 const rimraf = require('rimraf');
-const tar = require('tar');
+// const tar = require('tar');
 const tempDirectory = require('temp-dir');
 
 
@@ -188,15 +189,27 @@ function extract_package(input, output) {
     core.debug(`Archive size: ${fs.statSync(input)['size']}`)
 
     core.info(`Extracting archive "${input}" to "${output}" ...`);
-    tar.extract({
-      cwd: output,
-      file: input,
-      sync: true,
-      onwarn: function(code, message, data) {
-        core.setFailed(message)
-      },
-    }, []) // extract all files
-    core.info(`Archive extracted!`)
+    decompress(input, output).then(
+        files => {
+            core.info(`Archive extracted!`)
+        },
+        error => {
+            core.setFailed(error.message)
+        })
+        .catch(
+            error => {
+                throw new Error(`Error occured!: ${error}`)
+            }
+        )
+    // tar.extract({
+    //   cwd: output,
+    //   file: input,
+    //   sync: true,
+    //   onwarn: function(code, message, data) {
+    //     core.setFailed(message)
+    //   },
+    // }, []) // extract all files
+    // core.info(`Archive extracted!`)
 }
 
 function install_package(dwnld_archive_path) {
