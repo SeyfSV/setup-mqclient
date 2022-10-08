@@ -118,7 +118,6 @@ jobs:
         run: exit 1
 
   test_overwrite_false_job:
-    needs: test_custom_job # for right testing test_custom_job should contain exact latest version
     strategy:
       matrix:
         environment: ["macos-latest", "windows-latest", "ubuntu-latest"]
@@ -157,7 +156,6 @@ jobs:
         run: exit 1
 
   test_overwrite_true_job:
-    needs: test_custom_job # for right testing test_custom_job should contain exact latest version
     strategy:
       matrix:
         environment: ["macos-latest", "windows-latest", "ubuntu-latest"]
