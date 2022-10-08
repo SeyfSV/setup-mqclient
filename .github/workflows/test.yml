@@ -112,3 +112,73 @@ jobs:
       - name: Fail if previous success
         if: ${{ steps.install_mq_client.outcome == 0 }}
         run: exit 1
+
+  test_overwrite_false_job:
+    needs: test_custom_job # for right testing test_custom_job should contain exact latest version
+    strategy:
+      matrix:
+        environment: ["macos-latest", "windows-latest", "ubuntu-latest"]
+        mq-client-version: [latest]
+    runs-on: ${{ matrix.environment}}
+    steps:
+      - name: Checkout action
+        uses: actions/checkout@v2
+
+      - name: Cache MQ Client
+        uses: actions/cache@v2
+        with:
+          path: ${{ github.workspace }}/distr/test-path
+          key: mqclient-${{ runner.os }}-${{ matrix.mq-client-version }}-test-path
+          restore-keys: mqclient-${{ runner.os }}-
+
+      - name: Install MQ Client
+        uses: ./
+        with:
+          mq-client-version: ${{ matrix.mq-client-version }}
+          mq-file-path: mq-file-path/data
+          download-path: ${{ github.workspace }}/distr/test-path
+
+      - name: Install MQ Client (2)
+        uses: ./
+        with:
+          mq-client-version: ${{ matrix.mq-client-version }}
+          mq-file-path: mq-file-path/data
+          download-path: ${{ github.workspace }}/distr/test-path
+        continue-on-error: true
+
+      - name: Fail if previous success
+        if: ${{ steps.install_mq_client.outcome == 0 }}
+        run: exit 1
+
+  test_overwrite_true_job:
+    needs: test_custom_job # for right testing test_custom_job should contain exact latest version
+    strategy:
+      matrix:
+        environment: ["macos-latest", "windows-latest", "ubuntu-latest"]
+        mq-client-version: [latest]
+    runs-on: ${{ matrix.environment}}
+    steps:
+      - name: Checkout action
+        uses: actions/checkout@v2
+
+      - name: Cache MQ Client
+        uses: actions/cache@v2
+        with:
+          path: ${{ github.workspace }}/distr/test-path
+          key: mqclient-${{ runner.os }}-${{ matrix.mq-client-version }}-test-path
+          restore-keys: mqclient-${{ runner.os }}-
+
+      - name: Install MQ Client
+        uses: ./
+        with:
+          mq-client-version: ${{ matrix.mq-client-version }}
+          mq-file-path: mq-file-path/data
+          download-path: ${{ github.workspace }}/distr/test-path
+
+      - name: Install MQ Client (2)
+        uses: ./
+        with:
+          mq-client-version: ${{ matrix.mq-client-version }}
+          mq-file-path: mq-file-path/data
+          download-path: ${{ github.workspace }}/distr/test-path
+          clean-mq-file-path: true

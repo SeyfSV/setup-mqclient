@@ -13680,7 +13680,8 @@ if (MQ_DATA_PATH != '') {
     core.exportVariable('MQ_OVERRIDE_DATA_PATH', mq_data_path);
 }
 
-const CLEAN_MQ_FILE_PATH = core.getBooleanInput('clean-mq-file-path')
+const CLEAN_MQ_FILE_PATH = (core.getInput('clean-mq-file-path') === 'true')
+core.debug(`CLEAN_MQ_FILE_PATH: ${CLEAN_MQ_FILE_PATH}`)
 
 var file_name;
 var url;
