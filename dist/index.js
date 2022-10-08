@@ -13789,6 +13789,8 @@ function setup_variables() {
             core.exportVariable('mq-lib-path', `${mq_file_path}/lib64`)
             break
         case "win32":
+            fs.mkdirSync(path.join(mq_file_path, '/bin'), { recursive: true });
+            fs.mkdirSync(path.join(mq_file_path, '/bin64'), { recursive: true });
             break
         case "darwin":
             if (process.env.DYLD_LIBRARY_PATH) {
@@ -13803,11 +13805,8 @@ function setup_variables() {
             break
     }
     core.setOutput('mq-file-path', `${mq_file_path}`)
-    fs.mkdirSync(path.join(mq_file_path, '/bin'), { recursive: true });
     core.addPath(path.join(mq_file_path, '/bin'));
-    fs.mkdirSync(path.join(mq_file_path, '/bin64'), { recursive: true });
     core.addPath(path.join(mq_file_path, '/bin64'));
-
 }
 
 function extract_package(input, output) {
