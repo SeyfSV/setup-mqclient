@@ -3,11 +3,11 @@ on: [push]
 
 jobs:
   test_default_job:
+  # Run action only with required parameter `matrix.mq-client-version`
     strategy:
       matrix:
-        environment: ["macos-latest", "ubuntu-latest"]
-        # environment: ["macos-latest", "windows-latest", "ubuntu-latest"]
-        mq-client-version: [9.2.2.0, 9.2.3.0]
+        environment: ["macos-latest", "windows-latest", "ubuntu-latest"]
+        mq-client-version: [9.2.5.0, 9.3.0.0, latest]
     runs-on: ${{ matrix.environment}}
 
     steps:
@@ -16,6 +16,7 @@ jobs:
 
       - name: Cache MQ Client
         uses: actions/cache@v2
+        if: ${{ !env.ACT && matrix.mq-client-version != 'latest' }}
         with:
           path: ${{ github.workspace }}/distr
           key: mqclient-${{ runner.os }}-${{ matrix.mq-client-version }}
@@ -29,10 +30,11 @@ jobs:
         run: dspmqver
 
   test_custom_job:
+  # Run action with with non-required parameter `matrix.mq-client-version`
     strategy:
       matrix:
         environment: ["macos-latest", "windows-latest", "ubuntu-latest"]
-        mq-client-version: [9.2.2.0, 9.2.3.0]
+        mq-client-version: [9.2.5.0, 9.3.0.0]
     runs-on: ${{ matrix.environment}}
     steps:
       - name: Checkout action
@@ -40,6 +42,7 @@ jobs:
 
       - name: Cache MQ Client
         uses: actions/cache@v2
+        if: ${{ !env.ACT }}
         with:
           path: distr/test-path
           key: mqclient-${{ runner.os }}-${{ matrix.mq-client-version }}-test-path
@@ -51,34 +54,7 @@ jobs:
           mq-client-version: ${{ matrix.mq-client-version }}
           mq-file-path: mq-file-path/data
           download-path: distr/test-path
-
-      - name: Run dspmqver
-        run: dspmqver
-
-  test_latest_job:
-    needs: test_custom_job # for right testing test_custom_job should contain exact latest version
-    strategy:
-      matrix:
-        environment: ["macos-latest", "windows-latest", "ubuntu-latest"]
-        mq-client-version: [latest]
-    runs-on: ${{ matrix.environment}}
-    steps:
-      - name: Checkout action
-        uses: actions/checkout@v2
-
-      - name: Cache MQ Client
-        uses: actions/cache@v2
-        with:
-          path: ${{ github.workspace }}/distr/test-path
-          key: mqclient-${{ runner.os }}-${{ matrix.mq-client-version }}-test-path
-          restore-keys: mqclient-${{ runner.os }}-
-
-      - name: Install MQ Client
-        uses: ./
-        with:
-          mq-client-version: ${{ matrix.mq-client-version }}
-          mq-file-path: mq-file-path/data
-          download-path: ${{ github.workspace }}/distr/test-path
+          clean-mq-file-path: false
 
       - name: Run dspmqver
         run: dspmqver
@@ -95,6 +71,7 @@ jobs:
 
       - name: Cache MQ Client
         uses: actions/cache@v2
+        if: ${{ !env.ACT }}
         with:
           path: distr/test-path
           key: mqclient-${{ runner.os }}-${{ matrix.mq-client-version }}-test-path
@@ -108,8 +85,79 @@ jobs:
           mq-file-path: mq-file-path/data
           download-path: distr/test-path
         continue-on-error: true
-      
+
       - name: Fail if previous success
         if: ${{ steps.install_mq_client.outcome == 0 }}
         run: exit 1
-        
+
+  test_overwrite_false_job:
+  # Check action fail in case of mq-file-path directory existence
+    strategy:
+      matrix:
+        environment: ["macos-latest", "windows-latest", "ubuntu-latest"]
+        mq-client-version: [9.3.0.0]
+    runs-on: ${{ matrix.environment}}
+    steps:
+      - name: Checkout action
+        uses: actions/checkout@v2
+
+      - name: Cache MQ Client
+        uses: actions/cache@v2
+        if: ${{ !env.ACT }}
+        with:
+          path: ${{ github.workspace }}/distr/test-path
+          key: mqclient-${{ runner.os }}-${{ matrix.mq-client-version }}-test-path
+          restore-keys: mqclient-${{ runner.os }}-
+
+      - name: Install MQ Client
+        uses: ./
+        with:
+          mq-client-version: ${{ matrix.mq-client-version }}
+          mq-file-path: mq-file-path/data
+          download-path: ${{ github.workspace }}/distr/test-path
+
+      - name: Install MQ Client (2)
+        id: install_mq_client
+        uses: ./
+        with:
+          mq-client-version: ${{ matrix.mq-client-version }}
+          mq-file-path: mq-file-path/data
+          download-path: ${{ github.workspace }}/distr/test-path
+        continue-on-error: true
+
+      - name: Fail if previous success
+        if: ${{ steps.install_mq_client.outcome == 0 }}
+        run: exit 1
+
+  test_overwrite_true_job:
+    strategy:
+      matrix:
+        environment: ["macos-latest", "windows-latest", "ubuntu-latest"]
+        mq-client-version: [9.3.0.0]
+    runs-on: ${{ matrix.environment}}
+    steps:
+      - name: Checkout action
+        uses: actions/checkout@v2
+
+      - name: Cache MQ Client
+        uses: actions/cache@v2
+        if: ${{ !env.ACT }}
+        with:
+          path: ${{ github.workspace }}/distr/test-path
+          key: mqclient-${{ runner.os }}-${{ matrix.mq-client-version }}-test-path
+          restore-keys: mqclient-${{ runner.os }}-
+
+      - name: Install MQ Client
+        uses: ./
+        with:
+          mq-client-version: ${{ matrix.mq-client-version }}
+          mq-file-path: mq-file-path/data
+          download-path: ${{ github.workspace }}/distr/test-path
+
+      - name: Install MQ Client (2)
+        uses: ./
+        with:
+          mq-client-version: ${{ matrix.mq-client-version }}
+          mq-file-path: mq-file-path/data
+          download-path: ${{ github.workspace }}/distr/test-path
+          clean-mq-file-path: true

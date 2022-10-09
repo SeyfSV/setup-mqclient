@@ -3,9 +3,11 @@ name: 'Setup MQ Client'
 description: 'Setup a specific version of MQ Client'
 author: 'SeyfSV'
 branding:
-  icon: 'download'  
+  icon: 'download'
   color: 'blue'
 inputs:
+  clean-mq-file-path:
+    description: 'Force cleanup of `mq-file-path` directory'
   mq-client-version:
     description: 'MQ Client version'
     required: true
