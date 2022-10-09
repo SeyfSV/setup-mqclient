@@ -10234,7 +10234,7 @@ function setup_variables() {
 function extract_package(input, output) {
     if (fs.existsSync(output)) {
         if (CLEAN_MQ_FILE_PATH) {
-            fs.rmSync(output, { recursive: true, force: true });
+            rimraf.sync(path.join(output, '*'))
         } else {
             core.setFailed(`Directory ${output} already exists!`)
             process.exit(1)
@@ -18416,7 +18416,7 @@ if (process.env.READABLE_STREAM === 'disable' && Stream) {
 /***/ 578:
 /***/ (function(module) {
 
-module.exports = {"_from":"seek-bzip@^1.0.5","_id":"seek-bzip@1.0.6","_inBundle":false,"_integrity":"sha512-e1QtP3YL5tWww8uKaOCQ18UxIT2laNBXHjV/S2WYCiK4udiv8lkG89KRIoCjUagnAmCBurjF4zEVX2ByBbnCjQ==","_location":"/seek-bzip","_phantomChildren":{},"_requested":{"type":"range","registry":true,"raw":"seek-bzip@^1.0.5","name":"seek-bzip","escapedName":"seek-bzip","rawSpec":"^1.0.5","saveSpec":null,"fetchSpec":"^1.0.5"},"_requiredBy":["/decompress-tarbz2"],"_resolved":"https://registry.npmjs.org/seek-bzip/-/seek-bzip-1.0.6.tgz","_shasum":"35c4171f55a680916b52a07859ecf3b5857f21c4","_spec":"seek-bzip@^1.0.5","_where":"/home/seyf/projects/seyf/action-mqclient/node_modules/decompress-tarbz2","bin":{"seek-bunzip":"bin/seek-bunzip","seek-table":"bin/seek-bzip-table"},"bugs":{"url":"https://github.com/cscott/seek-bzip/issues"},"bundleDependencies":false,"contributors":[{"name":"C. Scott Ananian","url":"http://cscott.net"},{"name":"Eli Skeggs"},{"name":"Kevin Kwok"},{"name":"Rob Landley","url":"http://landley.net"}],"dependencies":{"commander":"^2.8.1"},"deprecated":false,"description":"a pure-JavaScript Node.JS module for random-access decoding bzip2 data","devDependencies":{"fibers":"~1.0.6","mocha":"~2.2.5"},"directories":{"test":"test"},"homepage":"https://github.com/cscott/seek-bzip#readme","license":"MIT","main":"./lib/index.js","name":"seek-bzip","repository":{"type":"git","url":"git+https://github.com/cscott/seek-bzip.git"},"scripts":{"test":"mocha"},"version":"1.0.6"};
+module.exports = {"name":"seek-bzip","version":"1.0.6","contributors":["C. Scott Ananian (http://cscott.net)","Eli Skeggs","Kevin Kwok","Rob Landley (http://landley.net)"],"description":"a pure-JavaScript Node.JS module for random-access decoding bzip2 data","main":"./lib/index.js","repository":{"type":"git","url":"https://github.com/cscott/seek-bzip.git"},"license":"MIT","bin":{"seek-bunzip":"./bin/seek-bunzip","seek-table":"./bin/seek-bzip-table"},"directories":{"test":"test"},"dependencies":{"commander":"^2.8.1"},"devDependencies":{"fibers":"~1.0.6","mocha":"~2.2.5"},"scripts":{"test":"mocha"}};
 
 /***/ }),
 

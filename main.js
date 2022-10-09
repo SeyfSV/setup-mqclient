@@ -174,7 +174,7 @@ function setup_variables() {
 function extract_package(input, output) {
     if (fs.existsSync(output)) {
         if (CLEAN_MQ_FILE_PATH) {
-            fs.rmSync(output, { recursive: true, force: true });
+            rimraf.sync(path.join(output, '*'))
         } else {
             core.setFailed(`Directory ${output} already exists!`)
             process.exit(1)
