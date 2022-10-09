@@ -7,7 +7,7 @@ const https = require('https');
 const os = require('os');
 const path = require('path');
 const platform = os.platform();
-const rimraf = require('rimraf')
+const rimraf = require('rimraf');
 const tempDirectory = require('temp-dir');
 
 
@@ -41,6 +41,9 @@ if (MQ_DATA_PATH != '') {
     var mq_data_path = path.resolve(MQ_DATA_PATH);
     core.exportVariable('MQ_OVERRIDE_DATA_PATH', mq_data_path);
 }
+
+const CLEAN_MQ_FILE_PATH = (core.getInput('clean-mq-file-path') === 'true')
+core.debug(`CLEAN_MQ_FILE_PATH: ${CLEAN_MQ_FILE_PATH}`)
 
 var file_name;
 var url;
@@ -148,6 +151,8 @@ function setup_variables() {
             core.exportVariable('mq-lib-path', `${mq_file_path}/lib64`)
             break
         case "win32":
+            fs.mkdirSync(path.join(mq_file_path, '/bin'), { recursive: true });
+            fs.mkdirSync(path.join(mq_file_path, '/bin64'), { recursive: true });
             break
         case "darwin":
             if (process.env.DYLD_LIBRARY_PATH) {
@@ -164,31 +169,29 @@ function setup_variables() {
     core.setOutput('mq-file-path', `${mq_file_path}`)
     core.addPath(path.join(mq_file_path, '/bin'));
     core.addPath(path.join(mq_file_path, '/bin64'));
-
 }
 
 function extract_package(input, output) {
-    if (!fs.existsSync(output)) {
-        fs.mkdirSync(output, { recursive: true });
-        core.info(`Directory ${output} created`)
+    if (fs.existsSync(output)) {
+        if (CLEAN_MQ_FILE_PATH) {
+            rimraf.sync(path.join(output, '*'))
+        } else {
+            core.setFailed(`Directory ${output} already exists!`)
+            process.exit(1)
+        }
     }
+
+    fs.mkdirSync(output, { recursive: true });
+    core.info(`Directory ${output} created`)
 
     core.debug(`Archive path: ${input}`)
     core.debug(`Archive size: ${fs.statSync(input)['size']}`)
 
     core.info(`Extracting archive "${input}" to "${output}" ...`);
-    decompress(input, output).then(
-        files => {
-            core.info(`Archive extracted!`)
-        },
-        error => {
-            core.setFailed(error.message)
-        })
-        .catch(
-            error => {
-                throw new Error(`Error occured!: ${error}`)
-            }
-        )
+    decompress(input, output,
+        {filter: file => !file.path.endsWith('/')})
+        .then(files => core.info(`Archive ${input} extracted!`))
+        .catch(error => {core.setFailed(error)})
 }
 
 function install_package(dwnld_archive_path) {
@@ -233,7 +236,7 @@ function getMaxVersion(url, archive_name, callback) {
 }
 
 function compareVersions(v1, v2) {
-    // return positive: v1 > v2, zero:v1 == v2, negative: v1 < v2 
+    // return positive: v1 > v2, zero:v1 == v2, negative: v1 < v2
     v1 = v1.split('.')
     v2 = v2.split('.')
     var len = Math.max(v1.length, v2.length)
