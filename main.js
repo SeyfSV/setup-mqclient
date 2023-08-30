@@ -67,6 +67,9 @@ switch (platform) {
         if (compareVersions(MQ_CLIENT_VERSION, '9.2.2.0') < 1) {
             ARCHIVE_MAC = 'IBM-MQ-Toolkit-MacX64.pkg'
         }
+        if (compareVersions(MQ_CLIENT_VERSION, '9.3.1.0') >= 0) {
+            ARCHIVE_MAC = 'IBM-MQ-DevToolkit-MacOS.pkg'
+        }
         archive_name = ARCHIVE_MAC
         mq_file_path = PKG_INSTALLATION_PATH
         break;
