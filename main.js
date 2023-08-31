@@ -16,7 +16,6 @@ const REDIST_URL_WIN = REDIST_URL_LNX
 const TOOLKIT_URL_MAC = 'https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqdev/mactoolkit/'
 const ARCHIVE_LNX = 'IBM-MQC-Redist-LinuxX64.tar.gz'
 const ARCHIVE_WIN = 'IBM-MQC-Redist-Win64.zip'
-var ARCHIVE_MAC = 'IBM-MQ-DevToolkit-MacX64.pkg' // Can have other value for previous version
 
 // Darwin constants
 PKG_INSTALLATION_PATH = '/opt/mqm'
@@ -25,6 +24,11 @@ var MQ_CLIENT_VERSION = core.getInput('mq-client-version')
 if (!MQ_CLIENT_VERSION.match('^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$|^latest$')) {
     core.setFailed(`${MQ_CLIENT_VERSION} has wrong version format!`)
     process.exit(1)
+}
+
+var ARCHIVE_MAC = 'IBM-MQ-DevToolkit-MacOS.pkg'
+if (compareVersions(MQ_CLIENT_VERSION, '9.3.1.0') < 0) {
+    ARCHIVE_MAC = 'IBM-MQ-DevToolkit-MacX64.pkg'
 }
 
 const FORCE_DWNLD = (core.getInput('force-download') === 'true')
@@ -64,9 +68,6 @@ switch (platform) {
         break;
     case "darwin":
         url = TOOLKIT_URL_MAC
-        if (compareVersions(MQ_CLIENT_VERSION, '9.2.2.0') < 1) {
-            ARCHIVE_MAC = 'IBM-MQ-Toolkit-MacX64.pkg'
-        }
         archive_name = ARCHIVE_MAC
         mq_file_path = PKG_INSTALLATION_PATH
         break;
@@ -235,16 +236,30 @@ function getMaxVersion(url, archive_name, callback) {
     return maxVersion
 }
 
+/**
+ * Compare two version numbers.
+ * @param {string} v1 The first version number to compare.
+ * @param {string} v2 The second version number to compare.
+ * @returns {number} Returns a positive number if v1 > v2, zero if v1 == v2, or a negative number if v1 < v2.
+ */
 function compareVersions(v1, v2) {
-    // return positive: v1 > v2, zero:v1 == v2, negative: v1 < v2
-    v1 = v1.split('.')
-    v2 = v2.split('.')
-    var len = Math.max(v1.length, v2.length)
-    /*default is true*/
+    // Split the version numbers into an array of strings
+    v1 = v1.split('.');
+    v2 = v2.split('.');
+
+    // Get the maximum length of the version number arrays
+    var len = Math.max(v1.length, v2.length);
+
+    // Compare each part of the version number
     for (let i = 0; i < len; i++) {
+        // Convert each part to a number, defaulting to 0 if empty
         _v1 = Number(v1[i] || 0);
         _v2 = Number(v2[i] || 0);
+
+        // If the parts are not equal, return the difference
         if (_v1 !== _v2) return _v1 - _v2;
     }
+
+    // If all parts are equal, return 0
     return 0;
 }
