@@ -28,7 +28,7 @@ if (!MQ_CLIENT_VERSION.match('^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$|^latest$')) {
 
 var ARCHIVE_MAC = 'IBM-MQ-DevToolkit-MacOS.pkg'
 if (compareVersions(MQ_CLIENT_VERSION, '9.3.1.0') < 0) {
-    ARCHIVE_MAC = 'IBM-MQ-Toolkit-MacX64.pkg'
+    ARCHIVE_MAC = 'IBM-MQ-DevToolkit-MacX64.pkg'
 }
 
 const FORCE_DWNLD = (core.getInput('force-download') === 'true')
