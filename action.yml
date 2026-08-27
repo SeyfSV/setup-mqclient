@@ -8,6 +8,8 @@ branding:
 inputs:
   clean-mq-file-path:
     description: 'Force cleanup of `mq-file-path` directory'
+    required: false
+    default: 'false'
   mq-client-version:
     description: 'MQ Client version'
     required: true
@@ -34,5 +36,5 @@ outputs:
     description: 'Installed MQ Client version'
 
 runs:
-  using: 'node12'
+  using: 'node24'
   main: 'dist/index.js'

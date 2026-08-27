@@ -1,22 +1,18 @@
 {
   "name": "action-mqclient",
-  "version": "0.2.0",
-  "description": "github action for installing MQ Client",
-  "main": "code/main.js",
+  "version": "0.4.0",
+  "description": "GitHub Action for installing the IBM MQ redistributable client",
+  "main": "main.js",
   "dependencies": {
-    "@actions/core": "^1.6.0",
-    "@actions/io": "^1.1.1",
-    "cheerio": "^1.0.0-rc.10",
-    "decompress": "^4.2.1",
-    "rimraf": "^3.0.2",
-    "temp-dir": "^2.0.0"
+    "@actions/core": "^1.11.1",
+    "decompress": "^4.2.1"
   },
   "devDependencies": {
-    "@zeit/ncc": "^0.20.5"
+    "@vercel/ncc": "^0.45.0"
   },
   "scripts": {
     "package": "ncc build main.js -o dist",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test"
   },
   "repository": {
     "type": "git",
@@ -29,7 +25,7 @@
     "github"
   ],
   "author": "SeyfSV",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/SeyfSV/setup-mqclient/issues"
   },

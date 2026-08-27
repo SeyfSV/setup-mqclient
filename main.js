@@ -1,265 +1,286 @@
 const core = require('@actions/core');
 const decompress = require('decompress');
-const { load } = require('cheerio');
 const { exec } = require('child_process');
+const dns = require('dns');
 const fs = require('fs');
 const https = require('https');
 const os = require('os');
 const path = require('path');
+
+if (typeof dns.setDefaultResultOrder === 'function') {
+    dns.setDefaultResultOrder('ipv4first');
+}
+const {
+    archiveFileName,
+    archiveNameForPlatform,
+    downloadUrlForPlatform,
+    executableBinDirs,
+    isRetryableNetworkError,
+    isSafeArchiveEntry,
+    isValidClientVersion,
+    libraryEnvForPlatform,
+    macInstallerCommand,
+    maxVersionFromListing,
+    resolveInstallPath,
+} = require('./lib');
+
 const platform = os.platform();
-const rimraf = require('rimraf');
-const tempDirectory = require('temp-dir');
 
+async function run() {
+    let mqClientVersion = core.getInput('mq-client-version');
+    if (!isValidClientVersion(mqClientVersion)) {
+        throw new Error(`${mqClientVersion} has wrong version format!`);
+    }
 
-const REDIST_URL_LNX = 'https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqdev/redist/'
-const REDIST_URL_WIN = REDIST_URL_LNX
-const TOOLKIT_URL_MAC = 'https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqdev/mactoolkit/'
-const ARCHIVE_LNX = 'IBM-MQC-Redist-LinuxX64.tar.gz'
-const ARCHIVE_WIN = 'IBM-MQC-Redist-Win64.zip'
+    const url = downloadUrlForPlatform(platform);
+    const archiveName = archiveNameForPlatform(platform, mqClientVersion);
+    if (!url || !archiveName) {
+        throw new Error(`Platform ${platform} is unknown!`);
+    }
 
-// Darwin constants
-PKG_INSTALLATION_PATH = '/opt/mqm'
+    const forceDownload = core.getInput('force-download') === 'true';
+    const mqFilePathInput = core.getInput('mq-file-path');
+    const mqDataPath = core.getInput('mq-data-path');
+    const downloadPathInput = core.getInput('download-path');
+    const cleanMqFilePath = core.getInput('clean-mq-file-path') === 'true';
 
-var MQ_CLIENT_VERSION = core.getInput('mq-client-version')
-if (!MQ_CLIENT_VERSION.match('^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$|^latest$')) {
-    core.setFailed(`${MQ_CLIENT_VERSION} has wrong version format!`)
-    process.exit(1)
+    const downloadPath = path.resolve(downloadPathInput);
+    core.debug(`Download directory path is ${downloadPath}`);
+    fs.mkdirSync(downloadPath, { recursive: true });
+
+    if (mqDataPath !== '') {
+        core.exportVariable('MQ_OVERRIDE_DATA_PATH', path.resolve(mqDataPath));
+    }
+
+    core.debug(`CLEAN_MQ_FILE_PATH: ${cleanMqFilePath}`);
+
+    const mqFilePath = resolveInstallPath(platform, mqFilePathInput, process.env);
+    core.debug(`MQ_FILE_PATH variable is ${mqFilePath}`);
+
+    if (mqClientVersion === 'latest') {
+        mqClientVersion = await resolveLatestVersion(url, archiveName);
+    }
+
+    const fileName = archiveFileName(mqClientVersion, archiveNameForPlatform(platform, mqClientVersion));
+    const downloadArchivePath = path.join(downloadPath, fileName);
+    const archiveExists = fs.existsSync(downloadArchivePath);
+    core.debug(`Archive ${downloadArchivePath} exists: ${archiveExists}`);
+
+    if (!archiveExists) {
+        rmContents(downloadPath);
+    }
+
+    core.debug(`Force download: ${forceDownload}`);
+    const usableCache = archiveExists
+        && fs.statSync(downloadArchivePath).size > 0
+        && !forceDownload;
+
+    if (!usableCache) {
+        core.info('Downloading MQ Client...');
+        const temporaryArchivePath = path.join(os.tmpdir(), fileName);
+        await withRetries(() => downloadFile(url + fileName, temporaryArchivePath), 'download');
+        core.info('Downloaded');
+        core.debug(`Archive size: ${fs.statSync(temporaryArchivePath).size}`);
+        core.debug(`Copy archive from "${temporaryArchivePath}" to "${downloadArchivePath}"`);
+        fs.copyFileSync(temporaryArchivePath, downloadArchivePath);
+    }
+
+    await install(downloadArchivePath, mqFilePath, cleanMqFilePath);
+    setupVariables(mqFilePath);
+    core.setOutput('mq-client-version', mqClientVersion);
 }
 
-var ARCHIVE_MAC = 'IBM-MQ-DevToolkit-MacOS.pkg'
-if (compareVersions(MQ_CLIENT_VERSION, '9.3.1.0') < 0) {
-    ARCHIVE_MAC = 'IBM-MQ-DevToolkit-MacX64.pkg'
+function rmContents(dir) {
+    if (!fs.existsSync(dir)) {
+        return;
+    }
+    for (const entry of fs.readdirSync(dir)) {
+        fs.rmSync(path.join(dir, entry), { recursive: true, force: true });
+    }
 }
 
-const FORCE_DWNLD = (core.getInput('force-download') === 'true')
-const MQ_FILE_PATH = core.getInput('mq-file-path')
-const MQ_DATA_PATH = core.getInput('mq-data-path')
+const HTTPS_HEADERS = { 'User-Agent': 'setup-mqclient' };
 
-const DWNLD_PATH = core.getInput('download-path')
-var dwnld_path = path.resolve(DWNLD_PATH);
-core.debug(`Download directory path is ${dwnld_path}`)
-if (!fs.existsSync(dwnld_path))
-    fs.mkdirSync(dwnld_path, { recursive: true })
-
-if (MQ_DATA_PATH != '') {
-    var mq_data_path = path.resolve(MQ_DATA_PATH);
-    core.exportVariable('MQ_OVERRIDE_DATA_PATH', mq_data_path);
+function ibmLookup(hostname, options, callback) {
+    const resolver = new dns.Resolver();
+    resolver.setServers(['8.8.8.8', '1.1.1.1']);
+    resolver.resolve4(hostname, (err, addresses) => {
+        if (!err && addresses && addresses.length) {
+            callback(null, addresses[0], 4);
+            return;
+        }
+        dns.lookup(hostname, options, callback);
+    });
 }
 
-const CLEAN_MQ_FILE_PATH = (core.getInput('clean-mq-file-path') === 'true')
-core.debug(`CLEAN_MQ_FILE_PATH: ${CLEAN_MQ_FILE_PATH}`)
-
-var file_name;
-var url;
-var archive_name;
-var mq_file_path;
-
-mq_file_path = path.resolve(MQ_FILE_PATH)
-switch (platform) {
-    case "linux":
-        url = REDIST_URL_LNX
-        archive_name = ARCHIVE_LNX
-        mq_file_path = path.join(process.env.HOME, 'IBM/MQ/data')
-        break;
-    case "win32":
-        url = REDIST_URL_WIN
-        archive_name = ARCHIVE_WIN
-        mq_file_path = path.join(process.env.HOMEDRIVE, process.env.HOMEPATH, 'IBM/MQ/data')
-        break;
-    case "darwin":
-        url = TOOLKIT_URL_MAC
-        archive_name = ARCHIVE_MAC
-        mq_file_path = PKG_INSTALLATION_PATH
-        break;
-    default:
-        core.setFailed(`Platform ${platform} is unknown!`)
-        process.exit(1)
+function httpsRequestOptions() {
+    return {
+        headers: HTTPS_HEADERS,
+        family: 4,
+        lookup: ibmLookup,
+    };
 }
-core.debug(`MQ_FILE_PATH variable is ${mq_file_path}`)
 
-if (MQ_CLIENT_VERSION == 'latest')
-    MQ_CLIENT_VERSION = getMaxVersion(url, archive_name, main)
-else
-    main(MQ_CLIENT_VERSION)
+async function withRetries(fn, label, attempts = 5, delayMs = 2000) {
+    let lastError;
+    for (let i = 1; i <= attempts; i++) {
+        try {
+            return await fn();
+        } catch (error) {
+            lastError = error;
+            if (!isRetryableNetworkError(error) || i === attempts) {
+                throw error;
+            }
+            const wait = delayMs * i;
+            core.info(`${label} failed (${error.message}); retrying in ${wait}ms (${i}/${attempts})`);
+            await new Promise((resolve) => setTimeout(resolve, wait));
+        }
+    }
+    throw lastError;
+}
 
-function main(mq_client_version) {
-
-    file_name = `${mq_client_version}-${archive_name}`
-
-    var dwnld_archive_path = path.join(dwnld_path, file_name)
-    var archiveExists = fs.existsSync(dwnld_archive_path)
-    core.debug(`Archive ${dwnld_archive_path} exists: ${archiveExists}`)
-    if (!archiveExists)
-        rimraf.sync(path.join(dwnld_path, '*'))
-    core.debug(`Force download: ${FORCE_DWNLD}`)
-    if (!(archiveExists
-        && fs.statSync(dwnld_archive_path)['size'] > 0
-        && !FORCE_DWNLD)) {
-        core.info('Downloading MQ Client...')
-        const https = require('https');
-        var temporary_archive_path = path.join(tempDirectory, file_name);
-        const file = fs.createWriteStream(temporary_archive_path);
-
-        let request = https.get(url + file_name,
-            (res) => {
-                switch (res.statusCode) {
-                    case 200:
-                        break;
-                    case (404) :
-                        core.setFailed(`File ${url + file_name} does not exists!`);
-                        return;
-                    default:
-                        core.setFailed(`Status code ${res.statusCode}!`);
-                        return;
+function httpsGetBody(url) {
+    return new Promise((resolve, reject) => {
+        https.get(url, httpsRequestOptions(), (res) => {
+            const chunks = [];
+            res.on('data', (chunk) => chunks.push(chunk));
+            res.on('end', () => {
+                const body = Buffer.concat(chunks).toString('utf8');
+                if (res.statusCode !== 200) {
+                    reject(new Error(`Status code ${res.statusCode}!`));
+                    return;
                 }
-
-                res.pipe(file).on('close', () => {
-                    core.info('Downloaded');
-                    core.debug(`Archive size: ${fs.statSync(temporary_archive_path)['size']}`);
-                    core.debug(`Copy archive from "${temporary_archive_path}" to "${dwnld_archive_path}"`);
-                    fs.copyFileSync(temporary_archive_path, dwnld_archive_path);
-                    install(dwnld_archive_path, mq_file_path);
-                });
-                res.on('error', (error) => {
-                    core.setFailed(error.message)
-                });
+                resolve(body);
             });
-        request.end();
-    } else
-        install(dwnld_archive_path, mq_file_path);
+            res.on('error', reject);
+        }).on('error', reject);
+    });
 }
 
-function install(dwnld_archive_path, mq_file_path) {
-    if (platform == "darwin") {
-        install_package(dwnld_archive_path)
-    }
-    else {
-        extract_package(dwnld_archive_path, mq_file_path)
-    }
-    setup_variables()
-
-}
-
-function setup_variables() {
-    switch (platform) {
-        case "linux":
-            if (process.env.LD_LIBRARY_PATH)
-                lib_path = `${mq_file_path}/lib64:${process.env['LD_LIBRARY_PATH']}`
-            else
-                lib_path = `${mq_file_path}/lib64`
-            core.exportVariable('LD_LIBRARY_PATH', lib_path)
-            core.exportVariable('mq-lib-var', `LD_LIBRARY_PATH`)
-            core.exportVariable('mq-lib-path', `${mq_file_path}/lib64`)
-            break
-        case "win32":
-            fs.mkdirSync(path.join(mq_file_path, '/bin'), { recursive: true });
-            fs.mkdirSync(path.join(mq_file_path, '/bin64'), { recursive: true });
-            break
-        case "darwin":
-            if (process.env.DYLD_LIBRARY_PATH) {
-                lib_path = `${mq_file_path}/lib64:${process.env['DYLD_LIBRARY_PATH']}`
+function downloadFile(url, dest) {
+    return new Promise((resolve, reject) => {
+        const file = fs.createWriteStream(dest);
+        let settled = false;
+        const fail = (err) => {
+            if (settled) {
+                return;
             }
-            else {
-                lib_path = `${mq_file_path}/lib64`
+            settled = true;
+            file.close(() => {
+                fs.rmSync(dest, { force: true });
+                reject(err);
+            });
+        };
+
+        https.get(url, httpsRequestOptions(), (res) => {
+            switch (res.statusCode) {
+                case 200:
+                    break;
+                case 404:
+                    fail(new Error(`File ${url} does not exists!`));
+                    res.resume();
+                    return;
+                default:
+                    fail(new Error(`Status code ${res.statusCode}!`));
+                    res.resume();
+                    return;
             }
-            core.exportVariable('DYLD_LIBRARY_PATH', lib_path)
-            core.exportVariable('mq-lib-var', `DYLD_LIBRARY_PATH`)
-            core.exportVariable('mq-lib-path', `${mq_file_path}/lib64`)
-            break
-    }
-    core.setOutput('mq-file-path', `${mq_file_path}`)
-    core.addPath(path.join(mq_file_path, '/bin'));
-    core.addPath(path.join(mq_file_path, '/bin64'));
+
+            res.pipe(file);
+            file.on('finish', () => {
+                if (settled) {
+                    return;
+                }
+                settled = true;
+                file.close(resolve);
+            });
+            res.on('error', fail);
+        }).on('error', fail);
+    });
 }
 
-function extract_package(input, output) {
+async function resolveLatestVersion(url, archiveName) {
+    core.debug(`Base URL for version search ${url}`);
+    core.debug(`Archive name pattern ${archiveName}`);
+    const html = await withRetries(() => httpsGetBody(url), 'version listing');
+    const maxVersion = maxVersionFromListing(html, archiveName);
+    core.debug(`Max version is ${maxVersion}`);
+    if (maxVersion === '0.0.0.0') {
+        throw new Error(`Could not determine latest MQ Client version from ${url}`);
+    }
+    return maxVersion;
+}
+
+async function install(downloadArchivePath, mqFilePath, cleanMqFilePath) {
+    if (platform === 'darwin') {
+        await installPackage(downloadArchivePath);
+    } else {
+        await extractPackage(downloadArchivePath, mqFilePath, cleanMqFilePath);
+    }
+}
+
+function setupVariables(mqFilePath) {
+    const exported = libraryEnvForPlatform(platform, mqFilePath, process.env);
+    for (const [name, value] of Object.entries(exported)) {
+        core.exportVariable(name, value);
+    }
+
+    if (platform === 'win32') {
+        for (const binDir of executableBinDirs(mqFilePath)) {
+            fs.mkdirSync(binDir, { recursive: true });
+        }
+    }
+
+    core.setOutput('mq-file-path', mqFilePath);
+    for (const binDir of executableBinDirs(mqFilePath)) {
+        core.addPath(binDir);
+    }
+}
+
+async function extractPackage(input, output, cleanMqFilePath) {
     if (fs.existsSync(output)) {
-        if (CLEAN_MQ_FILE_PATH) {
-            rimraf.sync(path.join(output, '*'))
+        if (cleanMqFilePath) {
+            rmContents(output);
         } else {
-            core.setFailed(`Directory ${output} already exists!`)
-            process.exit(1)
+            throw new Error(`Directory ${output} already exists!`);
         }
     }
 
     fs.mkdirSync(output, { recursive: true });
-    core.info(`Directory ${output} created`)
-
-    core.debug(`Archive path: ${input}`)
-    core.debug(`Archive size: ${fs.statSync(input)['size']}`)
-
+    core.info(`Directory ${output} created`);
+    core.debug(`Archive path: ${input}`);
+    core.debug(`Archive size: ${fs.statSync(input).size}`);
     core.info(`Extracting archive "${input}" to "${output}" ...`);
-    decompress(input, output,
-        {filter: file => !file.path.endsWith('/')})
-        .then(files => core.info(`Archive ${input} extracted!`))
-        .catch(error => {core.setFailed(error)})
+
+    await decompress(input, output, { filter: (file) => isSafeArchiveEntry(file.path) });
+    core.info(`Archive ${input} extracted!`);
 }
 
-function install_package(dwnld_archive_path) {
-    core.info(`Installing package "${dwnld_archive_path}" ...`)
-    exec('sudo installer -pkg ' + dwnld_archive_path + ' -target /', (error, stdout, stderr) => {
-        if (error) {
-            core.setFailed(error.message);
-        }
-        if (stderr) {
-            core.setFailed(stderr);
-        }
-        core.debug(`${stdout}`);
+function installPackage(downloadArchivePath) {
+    const command = macInstallerCommand(downloadArchivePath);
+    core.info(`Installing package "${downloadArchivePath}" ...`);
+    return new Promise((resolve, reject) => {
+        exec(command, { maxBuffer: 10 * 1024 * 1024 }, (error, stdout, stderr) => {
+            if (stdout) {
+                core.debug(stdout);
+            }
+            if (stderr) {
+                core.info(stderr);
+            }
+            if (error) {
+                reject(new Error(error.message));
+                return;
+            }
+            resolve();
+        });
     });
-
 }
 
-function getMaxVersion(url, archive_name, callback) {
-    core.debug(`Base URL for version seach ${url}`)
-    archive_name_pattern = `([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)-${archive_name}$`
-    core.debug(`Archive name pattern ${archive_name_pattern}`)
-    maxVersion = '0.0.0.0'
-    https.get(url,
-        (res) => {
-            core.debug(`Status code ${res.statusCode}`);
-            res.on('data', (d) => {
-                var $ = load(d);
-                $('a').each(function () {
-                    var match = $(this).attr('href').match(archive_name_pattern)
-                    if (match)
-                        if (compareVersions(maxVersion, match[1]) < 0)
-                            maxVersion = match[1]
-                })
-            });
-            res.on('end', () => {
-                core.debug(`Max version is ${maxVersion}`)
-                callback(maxVersion)
-            });
-        }
-    ).end()
-
-    return maxVersion
+if (require.main === module) {
+    run().catch((error) => {
+        core.setFailed(error.message);
+        process.exit(1);
+    });
 }
 
-/**
- * Compare two version numbers.
- * @param {string} v1 The first version number to compare.
- * @param {string} v2 The second version number to compare.
- * @returns {number} Returns a positive number if v1 > v2, zero if v1 == v2, or a negative number if v1 < v2.
- */
-function compareVersions(v1, v2) {
-    // Split the version numbers into an array of strings
-    v1 = v1.split('.');
-    v2 = v2.split('.');
-
-    // Get the maximum length of the version number arrays
-    var len = Math.max(v1.length, v2.length);
-
-    // Compare each part of the version number
-    for (let i = 0; i < len; i++) {
-        // Convert each part to a number, defaulting to 0 if empty
-        _v1 = Number(v1[i] || 0);
-        _v2 = Number(v2[i] || 0);
-
-        // If the parts are not equal, return the difference
-        if (_v1 !== _v2) return _v1 - _v2;
-    }
-
-    // If all parts are equal, return 0
-    return 0;
-}
+module.exports = { run };
